@@ -47,29 +47,74 @@ overwrite = true
 [[patches]]
 [patches.pattern]
 target = '=[SMODS _ "src/overrides.lua"]'
-pattern = '''local id = card:get_id()'''
-position = "at"
-payload = '''
-local id = SMODS.has_enhancement(card, 'm_garb_jump') and 0 or card:get_id()
-'''
+pattern = 'local ranks = {}'
+position = "after"
+payload = 'local jumps = {}'
 match_indent = true
-overwrite = true
-
 [[patches]]
 [patches.pattern]
 target = '=[SMODS _ "src/overrides.lua"]'
-pattern = '''table.sort(ret, function(a,b) return #a > #b end)'''
-position = "at"
+pattern = '''local id = card:get_id()'''
+position = "after"
 payload = '''
-if jumps < 4 then
-    table.sort(ret, function(a,b) return #a > #b end)
-else
-    ret = {hand}
+if SMODS.has_enhancement(card, 'm_garb_jump') then
+    id = 0
+    table.insert(jumps, card)
 end
 '''
 match_indent = true
-overwrite = true
-
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'if next(ranks[k]) then'
+position = "at"
+payload = 'if next(ranks[k]) or #jumps >= 1 then'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'tuples[#tuples+1] = {k}'
+position = "after"
+payload = 'tuples[#tuples].jumps_remaining = #jumps - (next(ranks[k]) and 0 or 1)'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'if i ~= #hand+1 then'
+position = "at"
+payload = 'if i + tuple.jumps_remaining ~= #hand+1 then'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'if next(ranks[l]) then'
+position = "at"
+payload = 'if next(ranks[l]) or #jumps >= 1 then'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'local new_tuple = {}'
+position = "after"
+payload = 'new_tuple.jumps_remaining = tuple.jumps_remaining - (next(ranks[l]) and 0 or 1)'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'if i > min_length and not any_tuple then'
+position = "at"
+payload = 'if i + tuple.jumps_remaining > min_length and not any_tuple then'
+match_indent = true
+[[patches]]
+[patches.pattern]
+target = '=[SMODS _ "src/overrides.lua"]'
+pattern = 'ret[#ret+1] = straight'
+position = "before"
+payload = '''
+for _, card in ipairs(jumps) do
+    straight[#straight+1] = card
+end'''
+match_indent = true
 
 # Golden Carrot
 [[patches]]
